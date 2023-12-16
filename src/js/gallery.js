@@ -59,36 +59,22 @@ async function search() {
 async function searchingSystem(page = 1) {
     const BASE_URL = "https://pixabay.com/api/";
     const key = "41267904-288ba903f65ff7510d19cbcee";
-    const q = searchValue;
+    const query = searchValue;
 
-    try {
-        const results = await axios.get(`${BASE_URL}`, {
-            params: {
-                key,
-                q,
-                image_type: "photo",
-                orientation: "horizontal",
-                safesearch: true,
-                page: page,
-                per_page,
-            }
-        });
-        if (q === '') {
-            return;
+    
+    const results = await axios.get(`${BASE_URL}`, {
+        params: {
+            key: key,
+            query: query,
+            image_type: "photo",
+            orientation: "horizontal",
+            safesearch: true,
+            page: page,
+            per_page,
         }
-        if (per_page >= results.data.hits) {
-            loadMore.style.display = 'none';
-            Notiflix.Notify.failure("We're sorry, but you've reached the end of search results.");
-            
-        }
-        return results
-        
-    } catch(error) {
-        console.log(error);
-
-    }
+    });
 }
-
+    
 
 function createMarkup(arr) {
     return arr.map(({webformatURL, largeImageURL, tags, likes, views, comments, downloads}) => `
