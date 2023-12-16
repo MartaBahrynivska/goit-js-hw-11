@@ -1,83 +1,93 @@
-import Notiflix from "notiflix";
+import Notiflix, { Notify } from "notiflix";
 import axios from 'axios';
 
-const searchForm = document.querySelector('.js-search-form');
-const gallery = document.querySelector('.js-gallery list');
-const loadMore = document.querySelector('.js-load-more');
-let page = 1;
-let searchValue;
-let per_page = 20;
+
+const BASE_URL = "https://pixabay.com/api/";
+const API_KEY = "41267904-288ba903f65ff7510d19cbcee";
+const perPage = 40;
 
 
-searchForm.addEventListener("submit", onSubmit);
-loadMore.addEventListener("click", onClick);
+const fetchData = async (page, query) => {
+  try {
+      const response = await axios.get(`${BASE_URL}`, {
+          params: {
+              key: API_KEY,
+              q: query,
+              image_type: "photo",
+              orientation: "horizontal",
+              safesearch: true,
+              page: page,
+              per_page: perPage,
 
-
-function onSubmit(event) {
-    event.preventDefault()
-    page = 1;
-    console.log(event);
-    const  searchQuery  = event.currentTarget.elements;
-    searchValue = searchQuery.value
-    
-    
-}
-
-function onClick() {
-    page += 1;
-    searchingSystem(page)
-        .then(data => {
-            console.log(data.data.hits)
-            gallery.insertAdjacentHTML("beforeend", createMarkup(data.data.hits))
-
-})
-.catch (error => console.log(error))
-}
-
-
-async function search() {
-    try {
-        const data = await searchingSystem(page, per_page);
-        if (data.data.totalHits === 0) {
-            Notiflix.Notify.failure("Sorry, there are no images matching your search query. Please try again.");
-            loadMore.style.display = 'none'
-        } else {
-            loadMore.style.display = "block"
-            Notiflix.Notify.success("Hooray! We found totalHits images.");
-        }
-        if (per_page >= data.data.totalHits) {
-            loadMore.style.display = "none"
-            Notiflix.Notify.failure("We're sorry, but you've reached the end of search results.")
-        }
-        gallery.innerHTML = createMarkup(data.data.hits)
-    } catch (error) {
-        console.log(error);
-    }
-};
-
-
-async function searchingSystem(page = 1) {
-    const BASE_URL = "https://pixabay.com/api/";
-    const key = "41267904-288ba903f65ff7510d19cbcee";
-    const query = searchValue;
-
-    
-    const results = await axios.get(`${BASE_URL}`, {
-        params: {
-            key: key,
-            query: query,
-            image_type: "photo",
-            orientation: "horizontal",
-            safesearch: true,
-            page: page,
-            per_page,
         }
     });
+    console.log(response.data);
+    // console.log(response.status);
+    // console.log(response.statusText);
+    // console.log(response.headers);
+    // console.log(response.config);
+  } catch (error) {
+    // Handle error
+    console.error(error);
+  }
+};
+
+fetchData();
+
+const formEl = document.querySelector('.js-search-form');
+const ulEl = document.querySelector('.js-gallery');
+const moreBtnEl = document.querySelector('.js-load-more');
+
+let page = 1;
+let query = null;
+
+formEl.addEventListener('submit', onSubmit)
+moreBtnEl.addEventListener('click', onClick)
+
+
+async function onSubmit(evt) {
+  evt.preventDefault()
+  page = 1;
+  const searchQuery = evt.target.elements['user-search-query'].value.trim()
+  query = searchQuery;
+  console.log(searchQuery);
+  try {
+    const { data } = await fetchData(page, query); 
+    const { totalHits, total, hits } = data;
+    if (hits.length === 0) {
+      Notiflix.Notify.failure('Sorry, there are no images matching your search query. Please try again.');
+    }
+    ulEl.innerHTML = createMarkup(hits);
+    Notiflix.Notify.success(`Hooray! We found ${totalHits} images.`)
+    if (totalHits > perPage) {
+      moreBtnEl.classList.remove('is-hidden');
+    }
+
+  } catch (error) {
+    console.log(error.message);
+  }
 }
+
+async function onClick(evt) {
+  page += 1;
+  try {
+    const { data } = await fetchData(page, query); 
+    const { totalHits, total, hits } = data;
+    ulEl.insertAdjacentHTML('beforeend', createMarkup(hits))
+    const lastPage = Math.ceil(totalHits / perPage)
+    if (lastPage === page) {
+      Notiflix.Notify.failure('We are sorry, but you have reached the end of search results.');
+      moreBtnEl.classList.add('is-hidden')
+    }
     
+  } catch (error) {
+    console.log(error.message);
+  }
+}
+
 
 function createMarkup(arr) {
-    return arr.map(({webformatURL, largeImageURL, tags, likes, views, comments, downloads}) => `
+  return arr.map(({webformatURL, largeImageURL, tags, likes, views, comments, downloads}) => `
     <div class="photo-card">
 <img class="imag-card" src="${webformatURL}" alt="${tags}" loading="lazy"/>
 <div class="info">
@@ -95,7 +105,5 @@ function createMarkup(arr) {
 </p>
 </div>
 </div>
-    `).join("");
-
+    `).join("")
 }
-
