@@ -9,7 +9,7 @@ const perPage = 40;
 
 const fetchData = async (page, query) => {
   try {
-      const response = await axios.get(`${BASE_URL}`, {
+      return await axios.get(`${BASE_URL}`, {
           params: {
               key: API_KEY,
               q: query,
@@ -20,12 +20,10 @@ const fetchData = async (page, query) => {
               per_page: perPage,
 
         }
-    });
-    console.log(response.data);
-    // console.log(response.status);
-    // console.log(response.statusText);
-    // console.log(response.headers);
-    // console.log(response.config);
+      });
+    
+    // return response.data;
+    
   } catch (error) {
     // Handle error
     console.error(error);
